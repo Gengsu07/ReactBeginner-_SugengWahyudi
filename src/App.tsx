@@ -14,13 +14,6 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [expenses, setExpenses] = useState([
     { id: 1, description: "beras", amount: 10000, category: "Grocerries" },
-    // { id: 2, description: "Wifi", amount: 10000, category: "Utilities" },
-    // {
-    //   id: 3,
-    //   description: "vidio.com",
-    //   amount: 10000,
-    //   category: "Entertainment",
-    // },
   ]);
 
   const onDelete = (id: number) => {
