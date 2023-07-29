@@ -1,51 +1,52 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
-
-interface Users {
-  id: number;
-  name: string;
-}
+import UserServices, { CanceledError, Users } from "../services/userService";
+import useUser from "../hooks/useUser";
 
 const GetUsers = () => {
-  const [users, setUsers] = useState<Users[]>([]);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setIsLoading(true);
-    axios
-      .get<Users[]>("https://jsonplaceholder.typicode.com/users", {
-        signal: controller.signal,
-      })
-      .then((res) => {
-        setIsLoading(false);
-        setUsers(res.data);
-      })
-      .catch((err) => {
-        if (axios.isCancel(err)) return;
-        setError(err.message);
-        setIsLoading(false);
-      });
-    return () => controller.abort();
-  }, []);
+  const { users, setUsers, error, setError, isLoading, setIsLoading } =
+    useUser();
 
   const onDelete = (user: Users) => {
     const originUsers = [...users];
     setUsers(users.filter((u) => u.id != user.id));
+    UserServices.deleteUsers(user.id).catch((err) => {
+      setError(err.message);
+      setUsers(originUsers);
+    });
+  };
 
-    axios
-      .delete("https://jsonplaceholder.typicode.com/users/" + user.id)
+  const AddUser = () => {
+    const originUsers = [...users];
+    const userAdded = {
+      id: 0,
+      name: "Gengsu",
+    };
+    setUsers([userAdded, ...users]);
+    UserServices.addUser(userAdded)
+      .then(({ data: savedUser }) => setUsers([savedUser, ...users]))
       .catch((err) => {
         setError(err.message);
         setUsers(originUsers);
       });
   };
 
+  const UpdateUser = (user: Users) => {
+    const originUsers = [...users];
+    const updatedUser = { ...user, name: user.name + "07" };
+    setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
+    UserServices.updateUsers(updatedUser).catch((err) => {
+      setError(err.message);
+      setUsers(originUsers);
+    });
+  };
+
   return (
     <div>
       {isLoading && <div className="spinner-border"></div>}
       {error && <p className="text-danger">{error}</p>}
+      <button className="btn btn-primary mb-3" onClick={() => AddUser()}>
+        Add
+      </button>
       <ul className="list-group">
         {users.map((user) => (
           <li
@@ -53,13 +54,20 @@ const GetUsers = () => {
             key={user.id}
           >
             {user.name}
-
-            <button
-              className="btn btn-outline-danger"
-              onClick={() => onDelete(user)}
-            >
-              Delete
-            </button>
+            <div>
+              <button
+                className="btn btn-secondary mx-2"
+                onClick={() => UpdateUser(user)}
+              >
+                Update
+              </button>
+              <button
+                className="btn btn-outline-danger"
+                onClick={() => onDelete(user)}
+              >
+                Delete
+              </button>
+            </div>
           </li>
         ))}
       </ul>
